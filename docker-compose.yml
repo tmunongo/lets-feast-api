@@ -1,0 +1,11 @@
+version: "3.9"
+
+# this service is the database service using mongo from docker hub
+services:
+  db:
+    image: mongo-replica:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
