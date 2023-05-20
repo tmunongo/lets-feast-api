@@ -3,42 +3,68 @@ var jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 // Prisma
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../../prisma";
 
 const router = Router();
 
 const saltRounds = 10;
 
 async function main() {
-  router.get("/register", async (req: Request, res: Response) => {
+  router.post("/register", async (req: Request, res: Response) => {
     // get the user's details
-    const { name, email, password } = req.body;
+    const { name, email, password, username } = req.body;
 
-    const hashed = bcrypt.hash(password, saltRounds);
+    const hashed = await bcrypt.hash(password, saltRounds);
 
     const newUser = await prisma.user.create({
       data: {
-        name: name,
         email: email,
+        username: username,
+        fullName: name,
         password: hashed,
       },
     });
+
+    return res.json({
+      token: jwt.sign({ user: newUser.email }, process.env.JWT_SECRET),
+    });
   });
-  router.get("/login", async (req: Request, res: Response) => {
+  router.post("/login", async (req: Request, res: Response) => {
     // get the user's details
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    console.log(`${username} is trying to login ..`);
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
 
-    if (username === "admin" && password === "admin") {
-      return res.json({
-        token: jwt.sign({ user: "admin" }, process.env.JWT_SECRET),
-      });
+    let authUser = false;
+
+    if (user) {
+      // check their password
+      authUser = bcrypt.compare(
+        password,
+        user.password,
+        function (err: { status: number }, result: any) {
+          if (err) {
+            return res
+              .status(err.status)
+              .json({ error: "An error occured, please try again later." });
+          }
+          if (result) {
+            return res.json({
+              token: jwt.sign({ user: user?.email }, process.env.JWT_SECRET),
+            });
+          } else {
+            return res.status(403).json({ error: "Password does not match." });
+          }
+        }
+      );
     }
   });
   router.get("/welcome", async (req: Request, res: Response) => {
-    res.status(401).send("You must be logged in to continue!");
+    res.status(200).json({ message: "You are logged in if you can see this!" });
   });
 }
 

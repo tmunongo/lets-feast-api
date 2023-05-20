@@ -1,11 +1,13 @@
-version: "3.9"
-
-# this service is the database service using mongo from docker hub
+version: "3.8"
 services:
-  db:
-    image: mongo-replica:latest
-    ports:
-      - "27017:27017"
+  postgres:
+    image: postgres:14.8
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres:/var/lib/posgresql/data
+    ports:
+      - 5432:5432
+volumes:
+  postgres:

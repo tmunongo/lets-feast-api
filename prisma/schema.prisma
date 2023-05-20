@@ -1,28 +1,56 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// schema.prisma
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  name     String?
-  password String
-  posts    Post[]
+  id            String         @id @default(uuid())
+  username      String
+  email         String         @unique
+  avatarUrl     String?
+  password      String
+  fullName      String?
+  recipes       Recipe[]       @relation("userRecipes")
+  mealPlans     MealPlan[]     @relation("userMealPlans")
+  shoppingPlans ShoppingPlan[] @relation("userShoppingPlans")
+  favorites     Recipe[]       @relation("userFavorites")
+  Recipe        Recipe[]
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
+model Recipe {
+  id          String     @id @default(uuid())
+  name        String
+  description String
+  imageUrl    String
+  ingredients String[]
+  prepTime    String
+  calories    Int?
+  users       User[]     @relation("userRecipes")
+  mealPlans   MealPlan[] @relation("recipeMealPlans")
+  User        User?      @relation(fields: [userId], references: [id])
+  favorites   User[]     @relation("userFavorites")
+  userId      String?
+}
+
+model MealPlan {
+  id        String   @id @default(uuid())
+  name      String
+  category  String
+  startDate String
+  endDate   String
+  recipes   Recipe[] @relation("recipeMealPlans")
+  users     User[]   @relation("userMealPlans")
+}
+
+model ShoppingPlan {
+  id    String   @id @default(uuid())
+  name  String
+  items String[]
+  users User[]   @relation("userShoppingPlans")
 }
